@@ -1,0 +1,4 @@
+<script>
+  window.open("Endoparasitic.html", "_blank", "noopener,noreferrer");
+  window.location.href = "Endoparasitic.html";
+</script>
