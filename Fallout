@@ -1,0 +1,146 @@
+<html lang="en"><head><base href="https://cdn.jsdelivr.net/gh/bubbls/dosbox/">
+
+<meta http-equiv="content-type" content="text/html;charset=UTF-8">
+
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>DOSBox SVN, CPU speed: max 100% cycles, Frameskip  0, Program:  FALLOUT</title>
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: black;
+            color: #fedb1d;
+            overflow: hidden;
+        }
+        
+        #canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: auto;
+            height: 100%;
+            background: black;
+            padding: 0;
+            margin: 0;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            -o-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+        }
+        
+        .emularity-splash-screen {
+            text-align: center;
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 50%;
+            margin: 0;
+            box-sizing: border-box;
+            color: #000;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-family: monospace;
+            font-size: 20px;
+        }
+        
+        #progress {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+    </style>
+<script type="text/javascript" src="js/dosbox-sync.js"></script></head>
+
+<body>
+    <div id="loading" style="display: none;">
+        <div>Loading...</div>
+        <div id="progress">Merging complete! Starting emulator...</div>
+    </div>
+    <canvas id="canvas" style="display: block; margin: 0px auto; image-rendering: pixelated; cursor: default;" onclick="window.focus();" width="640" height="480">
+    <script type="text/javascript" src="js/es6-promise.js"></script>
+    <script type="text/javascript" src="js/browserfs.min.js"></script>
+    <script type="text/javascript" src="js/loader.js"></script>
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+
+    <script type="text/javascript">
+        const PARTS_FOLDER = 'softs/fallout/';  
+        const BASE_FILENAME = 'fallout.zip';   
+        const NUM_PARTS = 23;                   
+
+        async function loadAndMergeZipParts() {
+            const progressEl = document.getElementById('progress');
+            const loadingEl = document.getElementById('loading');
+            
+            try {
+                const chunks = [];
+                
+                for (let i = 1; i <= NUM_PARTS; i++) {
+                    progressEl.textContent = `Loading part ${i}/${NUM_PARTS}...`;
+                    
+                    const partNum = i.toString().padStart(2, '0');
+                    const partUrl = `${PARTS_FOLDER}${BASE_FILENAME}.part${partNum}`;
+                    const response = await fetch(partUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to load ${partUrl}: ${response.status}`);
+                    }
+                    
+                    const arrayBuffer = await response.arrayBuffer();
+                    chunks.push(arrayBuffer);
+                    
+                    const progress = Math.round((i / NUM_PARTS) * 100);
+                    progressEl.textContent = `Merging archive parts: ${progress}%`;
+                }
+                
+                progressEl.textContent = 'Merging complete! Starting emulator...';
+                const mergedBlob = new Blob(chunks, { type: 'application/zip' });
+                
+                const blobUrl = URL.createObjectURL(mergedBlob);
+                
+                loadingEl.style.display = 'none';
+                document.getElementById('canvas').style.display = 'block';
+                
+                startEmulator(blobUrl);
+                
+            } catch (error) {
+                progressEl.textContent = `Error: ${error.message}`;
+                console.error('Failed to load game:', error);
+            }
+        }
+
+        function startEmulator(zipUrl) {
+            var dosbox = new Emulator(document.querySelector("#canvas"),
+                null,
+                new DosBoxLoader(DosBoxLoader.emulatorJS("js/dosbox-sync.js"),
+                    DosBoxLoader.locateAdditionalEmulatorJS(locateAdditionalFiles),
+                    DosBoxLoader.nativeResolution(640, 400),
+                    DosBoxLoader.mountZip("c",
+                        DosBoxLoader.fetchFile("Software", zipUrl)),
+                    DosBoxLoader.startExe('FALLOUT/FALLOUT.EXE')));
+            dosbox.start({
+                waitAfterDownloading: false
+            });
+
+            function locateAdditionalFiles(filename) {
+                if (filename === "dosbox.html.mem") {
+                    return "js/dosbox-sync.mem";
+                }
+                return "js/" + filename;
+            }
+        }
+
+        window.addEventListener('load', loadAndMergeZipParts);
+    </script>
+
+
+</canvas><div class="emularity-splash-screen" style="display: none;"><span class="emularity-splash-title" style="display: none; width: 100%; margin-top: 1em; margin-bottom: 1em; text-align: center; font: 8px sans-serif;">&nbsp;</span><table class="emularity-progress-indicator" data-has-custom-c-s-s="false" style="width: 75%; color: white; margin-left: auto; margin-right: auto; border-collapse: separate; border-spacing: 2px;"><tbody><tr style="text-align: center;"><td style="position: relative;"><span class="emularity-download-title" style="min-height: 24px; white-space: nowrap; font-size: 8px; color: rgb(195, 255, 0);">Launching Software...</span><span class="emularity-download-status" style="position: absolute; left: 0px; padding-left: 0.5em;"></span></td></tr></tbody></table></div></body></html>
